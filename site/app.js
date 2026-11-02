@@ -3,6 +3,8 @@
 // no third-party runtime dependency. If that copy is missing (e.g. opening the file
 // locally), we fall back to the same pinned version on unpkg.
 
+import { checkCustom } from "./rules.js";
+
 const HARPER_VERSION = "2.13.0";
 const SOURCES = [
   "./vendor/harper/",
@@ -54,6 +56,8 @@ let current = [];         // plain lint records for the latest run
 let runId = 0;
 let timer = 0;
 let ignoredCount = 0;
+const ignoredCustom = new Set();   // 已忽略的補充規則提示
+const NAME_KINDS = new Set(["Spelling", "Typo", "WordChoice", "Miscellaneous"]);
 
 // ---------- loading ----------
 async function loadHarper() {
@@ -97,19 +101,26 @@ async function run() {
     return;
   }
   if (id !== runId) return; // a newer run started
-  current = lints.map((lint, i) => {
+  const fromHarper = lints.map(lint => {
     const span = lint.span();
     const kind = lint.lint_kind();
+    const problem = lint.get_problem_text ? lint.get_problem_text() : text.slice(span.start, span.end);
     return {
-      i, lint, start: span.start, end: span.end, kind,
-      problem: lint.get_problem_text ? lint.get_problem_text() : text.slice(span.start, span.end),
+      lint, start: span.start, end: span.end, kind, problem,
       message: lint.message(),
+      // 大寫開頭、被當成拼錯的字，多半是人名或公司名（例如 Novak）
+      maybeName: NAME_KINDS.has(kind) && /^[A-Z][a-z]/.test(problem),
       suggestions: lint.suggestions().slice(0, 4).map(s => ({
         text: s.get_replacement_text(),
         kind: Number(s.kind()),
       })),
     };
-  }).sort((a, b) => a.start - b.start);
+  });
+  // 補充規則：和 Harper 重疊的就不重複顯示
+  const extra = checkCustom(text).filter(c =>
+    !ignoredCustom.has(customKey(c)) &&
+    !fromHarper.some(h => c.start < h.end && h.start < c.end));
+  current = [...fromHarper, ...extra].sort((a, b) => a.start - b.start);
   render(text);
 }
 
@@ -125,11 +136,13 @@ function sugLabel(rec, sug) {
   if (sug.kind === 2) return rec.problem + sug.text;
   return sug.text === "" ? "刪除" : sug.text;
 }
+function customKey(r) { return r.rule + "|" + r.problem.toLowerCase(); }
+
 function applyAll(text, recs) {
   // apply right-to-left so earlier offsets stay valid; skip overlaps
   let out = text, lastStart = Infinity;
   for (const rec of [...recs].sort((a, b) => b.start - a.start)) {
-    if (!rec.suggestions.length || rec.end > lastStart) continue;
+    if (!rec.suggestions.length || rec.maybeName || rec.end > lastStart) continue;
     out = applyTo(out, rec, rec.suggestions[0]);
     lastStart = rec.start;
   }
@@ -183,7 +196,8 @@ function render(text) {
     const num = el("div", "num", String(n + 1).padStart(2, "0"));
     const body = document.createElement("div");
     const head = el("div", "head");
-    head.append(el("span", "problem", r.problem || "（此處）"), el("span", "kind", zhName));
+    head.append(el("span", "problem", r.problem || "（此處）"), el("span", "kind", r.maybeName ? "人名？" : zhName));
+    if (r.custom) head.append(el("span", "src-tag", "校稿台規則"));
     const acts = el("div", "acts");
     r.suggestions.forEach(s => {
       const b = el("button", "fix", sugLabel(r, s));
@@ -192,14 +206,27 @@ function render(text) {
       b.addEventListener("click", () => { src.value = applyTo(src.value, r, s); run(); });
       acts.append(b);
     });
+    if (r.maybeName) {
+      const add = el("button", "ign", "這是人名／專有名詞，加入字典");
+      add.type = "button";
+      add.addEventListener("click", () => addWord(r.problem));
+      acts.append(add);
+    }
     const ign = el("button", "ign", "忽略");
     ign.type = "button";
     ign.addEventListener("click", async () => {
-      try { await harper.linter.ignoreLint(src.value, r.lint); ignoredCount++; $("resetIgnoreBtn").hidden = false; } catch (e) { console.warn(e); }
+      if (r.custom) ignoredCustom.add(customKey(r));
+      else { try { await harper.linter.ignoreLint(src.value, r.lint); } catch (e) { console.warn(e); } }
+      ignoredCount++; $("resetIgnoreBtn").hidden = false;
       run();
     });
     acts.append(ign);
-    body.append(head, el("div", "zh", zhWhy), el("div", "en", r.message), acts);
+    const zhText = r.maybeName
+      ? "字典裡沒有這個字。如果是人名、公司名或產品名，請忽略或加入字典；「套用建議後的版本」不會自動修改它。"
+      : (r.zh || zhWhy);
+    body.append(head, el("div", "zh", zhText));
+    if (!r.custom) body.append(el("div", "en", r.message));
+    body.append(acts);
     li.append(num, body);
     ol.append(li);
   });
@@ -250,6 +277,15 @@ async function copy(text, btn) {
   setTimeout(() => (btn.textContent = orig), 1500);
 }
 
+// ---------- personal dictionary ----------
+function loadWords() { try { return JSON.parse(localStorage.getItem("gc-words") || "[]"); } catch { return []; } }
+async function addWord(w) {
+  const words = loadWords();
+  if (!words.includes(w)) { words.push(w); try { localStorage.setItem("gc-words", JSON.stringify(words)); } catch {} }
+  try { await harper.linter.importWords([w]); } catch (e) { console.warn(e); }
+  run();
+}
+
 // ---------- drafts ----------
 function saveDraft() { try { localStorage.setItem("gc-draft", src.value); } catch {} }
 function loadDraft() { try { return localStorage.getItem("gc-draft"); } catch { return null; } }
@@ -283,6 +319,7 @@ ${src.value.trim()}
 """`, e.currentTarget));
 $("resetIgnoreBtn").addEventListener("click", async () => {
   try { await harper.linter.clearIgnoredLints(); } catch {}
+  ignoredCustom.clear();
   ignoredCount = 0; $("resetIgnoreBtn").hidden = true; run();
 });
 $("dialect").addEventListener("change", async e => {
@@ -296,6 +333,8 @@ loadHarper().then(async h => {
   harper = h;
   const d = $("dialect").value;
   if (d !== "American") { try { await h.linter.setDialect(h.Dialect[d]); } catch {} }
+  const words = loadWords();
+  if (words.length) { try { await h.linter.importWords(words); } catch {} }
   setEngine("檢查引擎已就緒 · 離線運作", "ready");
   run();
 }).catch(() => {

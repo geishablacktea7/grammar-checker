@@ -55,6 +55,7 @@ button{font:inherit;cursor:pointer;border-radius:7px}
 .kind{font-family:var(--f-mono);font-size:11px;padding:1px 8px;border-radius:99px;background:var(--mark-soft);color:var(--mark)}
 .issues li.sug .kind{background:var(--pencil-soft);color:var(--pencil)}
 .zh{font-size:14px;margin-top:4px}
+.src-tag{font-size:11px;color:var(--muted);border:1px solid var(--rule);border-radius:99px;padding:0 7px}
 .en{font-size:13px;color:var(--muted);margin-top:2px;font-family:var(--f-en);overflow-wrap:anywhere}
 .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .fix{border:1px solid var(--ok);background:transparent;color:var(--ok);padding:3px 10px;font-family:var(--f-en);font-size:15px}

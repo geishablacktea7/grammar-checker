@@ -43,6 +43,29 @@ try {
   console.log("Console errors:", errors.length ? errors : "none");
 
   ok = /ready/.test(await page.$eval("#engine", e => e.className)) && items.length >= 2;
+
+  // Second check: a longer email with a name Harper doesn't know.
+  const SAMPLE = `Dear Ms. Novak,
+
+I hope this email find you well. I am writing to follow up on the the order we discussed last week. Unfortunately, we have not recieve the payment yet, and i would like to confirm if their was any problem on your side.
+
+Our team have already prepared an updated invoice. It include all the changes you requested, and we definately want to make sure everything is correct before we sent it. Could you please check it and let me know if you has any comments?
+
+We could of shipped the goods earlier, but we was waiting for an confirmation from your warehouse. I think it is a important step, so we dont want to skip it.
+
+Thank you for you patience. I am looking forward to receive your reply until Friday.`;
+  await page.$eval("#src", (el, v) => { el.value = v; el.dispatchEvent(new Event("input")); }, SAMPLE);
+  await new Promise(r => setTimeout(r, 2500));
+  const tally2 = await page.$eval("#tally", e => e.textContent);
+  const items2 = await page.$$eval("#issues li", lis => lis.map(li => li.innerText.replace(/\s+/g, " ").trim()));
+  const fixed2 = await page.$eval("#fixed", e => e.textContent);
+  console.log("\n== Sample email ==\nTally:", tally2);
+  items2.forEach((t, i) => console.log(`  ${i + 1}. ${t.slice(0, 160)}`));
+  console.log("Fixed version:\n" + fixed2);
+  const keepsName = fixed2.includes("Ms. Novak");
+  const usesRules = /finds you well/.test(fixed2) && /It includes/.test(fixed2);
+  console.log("Keeps name:", keepsName, "| Custom rules applied:", usesRules);
+  ok = ok && keepsName && usesRules;
 } catch (e) {
   console.error("Smoke test error:", e);
 } finally {
