@@ -292,6 +292,17 @@ function loadDraft() { try { return localStorage.getItem("gc-draft"); } catch { 
 function saveDialect(v) { try { localStorage.setItem("gc-dialect", v); } catch {} }
 function loadDialect() { try { return localStorage.getItem("gc-dialect"); } catch { return null; } }
 
+// ---------- appearance ----------
+function currentTheme() { try { return localStorage.getItem("gc-theme") || "auto"; } catch { return "auto"; } }
+function setTheme(t) {
+  if (t === "auto") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  try { t === "auto" ? localStorage.removeItem("gc-theme") : localStorage.setItem("gc-theme", t); } catch {}
+  document.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeChoice === t)));
+}
+document.querySelectorAll("[data-theme-choice]").forEach(b => b.addEventListener("click", () => setTheme(b.dataset.themeChoice)));
+setTheme(currentTheme());
+
 // ---------- wiring ----------
 src.value = loadDraft() ?? EXAMPLE;
 updateCount();
