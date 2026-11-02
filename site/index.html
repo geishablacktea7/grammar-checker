@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>英文文法校稿台</title>
+<meta name="description" content="免費、免登入的英文文法檢查。文字只在你的瀏覽器裡處理，不會上傳。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>English Grammar <span>校稿台</span></h1>
+    <p>貼上英文，系統會自動標出拼字、文法和用字問題，點建議就能直接修正。<strong>完全免費、不用登入，文字只在你的電腦裡處理，不會上傳到任何地方。</strong></p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="in-label">
+      <div class="label">
+        <span id="in-label">原文</span>
+        <span class="engine" id="engine" role="status">正在載入檢查引擎…</span>
+      </div>
+      <textarea id="src" spellcheck="false" aria-label="要檢查的英文"></textarea>
+      <div class="row">
+        <label class="field">英文種類
+          <select id="dialect">
+            <option value="American">美式</option>
+            <option value="British">英式</option>
+            <option value="Canadian">加拿大</option>
+            <option value="Australian">澳洲</option>
+            <option value="Indian">印度</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="errorsOnly"> 只看錯誤（隱藏風格建議）</label>
+        <span class="count" id="count"></span>
+      </div>
+      <div class="row">
+        <button class="ghost" id="exampleBtn" type="button">載入範例</button>
+        <button class="ghost" id="clearBtn" type="button">清空</button>
+        <button class="ghost" id="resetIgnoreBtn" type="button" hidden>恢復已忽略的提示</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="out-label">
+      <div class="label"><span id="out-label">校稿結果</span><span class="tally" id="tally"></span></div>
+      <div class="proof" id="proof" aria-live="polite"></div>
+      <ol class="issues" id="issues"></ol>
+
+      <div class="ver">
+        <h3>套用建議後的版本 <small>每個問題都採用第一個建議</small></h3>
+        <div class="txt" id="fixed"></div>
+        <div class="row">
+          <button class="ghost" type="button" id="copyFixed">複製</button>
+          <button class="ghost" type="button" id="useFixed">取代原文</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="note">
+    <h2>需要整段改寫得更自然？</h2>
+    <p>這個工具擅長抓拼字、文法和常見用法錯誤，但不會幫你重寫句子或調整語氣。重要的信件可以按下面的按鈕，把文字連同指令一起複製，再貼到 ChatGPT 或 Claude。</p>
+    <button class="ghost" type="button" id="copyPrompt">複製「AI 改寫」提示詞</button>
+  </section>
+
+  <footer>
+    檢查引擎：<a href="https://writewithharper.com" target="_blank" rel="noopener">Harper</a>（開源，Apache-2.0 授權）。所有檢查都在瀏覽器內完成。
+  </footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
