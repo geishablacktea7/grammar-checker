@@ -44,6 +44,15 @@ jobs:
           rm -f binaryInlined.js slimBinaryInlined.js slimBinary.js harper_wasm_slim_bg.wasm *.d.ts
           ls -la "$GITHUB_WORKSPACE/site/vendor/harper"
 
+      # Open the site in Chrome with the real engine; stop if nothing gets flagged.
+      - name: Smoke test
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund puppeteer-core@23.11.1
+          cp "$GITHUB_WORKSPACE/tests/smoke.mjs" .
+          CHROME_PATH=$(which google-chrome || which chromium) node smoke.mjs "$GITHUB_WORKSPACE/site"
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
