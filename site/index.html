@@ -45,9 +45,8 @@
     </section>
 
     <section class="panel" aria-labelledby="out-label">
-      <div class="label"><span id="out-label">校稿結果</span><span class="tally" id="tally"></span></div>
+      <div class="label"><span id="out-label">校稿結果</span><span class="hint">點標記看說明</span></div>
       <div class="proof" id="proof" aria-live="polite"></div>
-      <ol class="issues" id="issues"></ol>
 
       <div class="ver">
         <h3>套用建議後的版本 <small>每個問題都採用第一個建議</small></h3>
@@ -57,6 +56,11 @@
           <button class="ghost" type="button" id="useFixed">取代原文</button>
         </div>
       </div>
+    </section>
+
+    <section class="panel explain" aria-labelledby="ex-label">
+      <div class="label"><span id="ex-label">文法解釋</span><span class="tally" id="tally"></span></div>
+      <ol class="issues" id="issues"></ol>
     </section>
   </div>
 
