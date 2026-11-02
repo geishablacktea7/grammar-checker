@@ -61,9 +61,9 @@ async function loadHarper() {
     try {
       const [main, bin] = await Promise.all([
         import(base + "index.js"),
-        import(base + "binaryInlined.js"),
+        import(base + "binary.js"),
       ]);
-      const linter = new main.WorkerLinter({ binary: bin.binaryInlined });
+      const linter = new main.WorkerLinter({ binary: bin.binary });
       await linter.setup();
       return { linter, Dialect: main.Dialect, SuggestionKind: main.SuggestionKind, base };
     } catch (e) {
