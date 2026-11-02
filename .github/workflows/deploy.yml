@@ -39,9 +39,9 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/site/vendor/harper"
           cp -r package/dist/. "$GITHUB_WORKSPACE/site/vendor/harper/"
           cp package/LICENSE* "$GITHUB_WORKSPACE/site/vendor/harper/" 2>/dev/null || true
-          # The site loads binary.js + harper_wasm_bg.wasm; drop the unused variants.
+          # The site loads binary.js + the .wasm files; drop the unused inlined variants.
           cd "$GITHUB_WORKSPACE/site/vendor/harper"
-          rm -f binaryInlined.js slimBinaryInlined.js slimBinary.js harper_wasm_slim_bg.wasm *.d.ts
+          rm -f binaryInlined.js slimBinaryInlined.js *.d.ts
           ls -la "$GITHUB_WORKSPACE/site/vendor/harper"
 
       # Open the site in Chrome with the real engine; stop if nothing gets flagged.
