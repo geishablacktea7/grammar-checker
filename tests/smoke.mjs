@@ -25,6 +25,7 @@ try {
   const errors = [];
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", m => m.type() === "error" && errors.push(m.text()));
+  page.on("response", r => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto("http://localhost:4173/", { waitUntil: "load" });
 
   await page.waitForFunction(() => /ready|err/.test(document.getElementById("engine").className), { timeout: 90000 });

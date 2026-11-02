@@ -33,6 +33,7 @@ const KINDS = {
   Typo:           ["err", "打字錯誤", "看起來是手誤打錯的字。"],
   Usage:          ["err", "慣用搭配", "這個字的搭配方式不符合英文慣用法。"],
   WordOrder:      ["err", "語序", "字的順序不自然或不正確。"],
+  WordChoice:     ["err", "用字", "這個字可能用錯了，或有詞形錯誤（例如該用 V-ing）。"],
   Enhancement:    ["sug", "表達加強", "沒有錯，但可以寫得更清楚有力。"],
   Formatting:     ["sug", "格式", "空格、排版等格式問題。"],
   Miscellaneous:  ["sug", "其他", "其他值得注意的地方。"],
@@ -41,7 +42,7 @@ const KINDS = {
   Regionalism:    ["sug", "地區用法", "這是某些地區（如美式／英式）才用的寫法。"],
   Repetition:     ["sug", "重複", "同一個字連續出現了兩次。"],
   Style:          ["sug", "風格", "兩種寫法都對，但這種比較常見或比較正式。"],
-  WordChoice:     ["sug", "用字選擇", "這裡可能有更適合的字。"],
+
 };
 const kindInfo = k => KINDS[k] || ["sug", k || "其他", "值得檢查的地方。"];
 
