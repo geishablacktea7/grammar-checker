@@ -81,6 +81,96 @@ function sentenceAround(text, idx) {
   return text.slice(s, m ? idx + m.index : text.length);
 }
 
+
+// ---------- 名詞單複數 ----------
+// 只收「一定是可數」的常見名詞，避免 time、work、business 這類可數也可不可數的字造成誤判。
+const COUNTABLE = `apple banana orange egg potato tomato cake cookie sandwich bottle cup glass plate
+item order product customer client email message question problem issue invoice receipt quotation contract
+day week month year hour minute second document file folder meeting call person child man woman
+company country city town change request comment idea reason way thing example step option project task
+colleague friend book car box bag package parcel shipment delivery supplier vendor price report chance
+mistake error user member employee manager student teacher page picture photo case part piece point result
+detail team office store shop restaurant hotel word sentence language holiday trip plan version update
+computer phone laptop screen key table chair door window room house building street road bus train flight
+ticket seat event course lesson class test exam task deadline account address number letter partner
+department branch factory warehouse truck pallet sample feature tool app website link account problem
+solution answer reply proposal suggestion offer discount payment transfer bill department colleague
+dog cat bird tree flower leaf knife life wife shelf half foot tooth mouse`.split(/\s+/).filter(Boolean);
+const IRREG_PL = { person: "people", child: "children", man: "men", woman: "women", foot: "feet", tooth: "teeth", mouse: "mice",
+  knife: "knives", life: "lives", wife: "wives", shelf: "shelves", half: "halves", leaf: "leaves", potato: "potatoes", tomato: "tomatoes" };
+function plural(n) {
+  if (IRREG_PL[n]) return IRREG_PL[n];
+  if (/[^aeiou]y$/.test(n)) return n.slice(0, -1) + "ies";
+  if (/(s|x|z|ch|sh)$/.test(n)) return n + "es";
+  return n + "s";
+}
+const SING = new Set(COUNTABLE);
+const PL_TO_SING = {};
+for (const n of COUNTABLE) PL_TO_SING[plural(n)] = n;
+const ADJ = "new|old|big|small|large|different|good|bad|important|other|red|green|yellow|fresh|local|major|minor|similar|possible|additional|potential|urgent|open|last|next|few|great|nice|long|short|main|key|simple|small";
+const NUMS = "two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|hundred|[2-9]|[1-9][0-9]+";
+
+function nextWordAfter(text, idx) {
+  const m = /^\s+([A-Za-z]+)/.exec(text.slice(idx));
+  return m ? m[1].toLowerCase() : "";
+}
+
+function countRules() {
+  const nounSing = COUNTABLE.join("|");
+  const nounPl = Object.keys(PL_TO_SING).join("|");
+  const mk = (id, re, check) => ({ id, re, check });
+  return [
+    // 需要複數的數量詞 + 單數名詞
+    mk("plural-after-quantifier",
+      new RegExp(`\\b(many|several|few|a few|both|these|those|various|numerous|multiple|a couple of|a number of|a lot of|lots of|${NUMS})\\s+(?:(${ADJ})\\s+)?(${nounSing})\\b`, "gi"),
+      (m, text) => {
+        const q = m[1].toLowerCase(), noun = m[3];
+        const after = nextWordAfter(text, m.index + m[0].length);
+        // "many apple trees"、"two email addresses"：後面還接名詞時，這個字是當形容詞用
+        if (SING.has(after) || PL_TO_SING[after] || /^(trees|addresses|numbers|accounts|lists|types|sizes|models|levels|managers|members|pages)$/.test(after)) return null;
+        // 數字當編號用：Version 2 update、Room 12 key、Step 3 result
+        if (/^\d/.test(q) && /^(version|v|room|step|phase|level|page|chapter|section|model|no|number|item|line|gate|floor|building|week|day|year|q|part|type|size|option|plan|team|group)$/i.test(prevWord(text, m.index))) return null;
+        // 數字後面接年份、時間等不是名詞的情況
+        if (/^\d/.test(q) && /^(year|day|hour|minute|month|week)$/i.test(noun) && /-/.test(text.slice(m.index + m[0].length, m.index + m[0].length + 1))) return null;
+        const pl = plural(noun.toLowerCase());
+        const fixed = noun[0] === noun[0].toUpperCase() ? pl[0].toUpperCase() + pl.slice(1) : pl;
+        const start = m.index + m[0].length - noun.length;
+        return {
+          start, end: start + noun.length, kind: "Agreement", problem: noun,
+          zh: `「${m[1]}」後面的可數名詞要用複數：${noun} → ${fixed}。`,
+          suggestions: [{ text: fixed, kind: 0 }],
+        };
+      }),
+    // 需要單數的限定詞 + 複數名詞
+    mk("singular-after-each",
+      new RegExp(`\\b(each|every|one|a single|another)\\s+(?:(${ADJ})\\s+)?(${nounPl})\\b`, "gi"),
+      (m, text) => {
+        const q = m[1].toLowerCase();
+        // "one of the items" 不會被抓（of 在中間）；"each others" 之類不在名詞表
+        if (q === "one" && /^\s+of\b/i.test(text.slice(m.index + m[0].length))) return null;
+        const noun = m[3], sing = PL_TO_SING[noun.toLowerCase()];
+        const fixed = noun[0] === noun[0].toUpperCase() ? sing[0].toUpperCase() + sing.slice(1) : sing;
+        const start = m.index + m[0].length - noun.length;
+        return {
+          start, end: start + noun.length, kind: "Agreement", problem: noun,
+          zh: `「${m[1]}」後面的名詞要用單數：${noun} → ${fixed}。`,
+          suggestions: [{ text: fixed, kind: 0 }],
+        };
+      }),
+    // much + 可數複數 → many
+    mk("much-countable",
+      new RegExp(`\\b(much|how much|too much|so much)\\s+(${nounPl})\\b`, "gi"),
+      (m) => {
+        const word = m[1].replace(/much/i, w => (w[0] === "M" ? "Many" : "many"));
+        return {
+          start: m.index, end: m.index + m[1].length, kind: "Agreement", problem: m[1],
+          zh: `${m[2]} 是可數名詞，數量多要用 many，much 是給不可數名詞（例如 much time、much money）。`,
+          suggestions: [{ text: word, kind: 0 }],
+        };
+      }),
+  ];
+}
+
 const RULES = [
   // 1. 第三人稱單數：It include / He need / This email find
   {
@@ -177,6 +267,8 @@ const RULES = [
       };
     },
   },
+  // 6. 數量詞與名詞單複數：Many apple / two order / every days / much apples
+  ...countRules(),
   // 6. 中式英文常見固定錯誤
   ...[
     [/\bdiscuss(?:ed|es|ing)?\s+about\b/gi, m => m[0].replace(/\s+about$/i, ""), "discuss 是及物動詞，後面直接接討論的事，不用加 about。"],

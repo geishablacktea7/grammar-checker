@@ -66,6 +66,13 @@ Thank you for you patience. I am looking forward to receive your reply until Fri
   const usesRules = /finds you well/.test(fixed2) && /It includes/.test(fixed2);
   console.log("Keeps name:", keepsName, "| Custom rules applied:", usesRules);
   ok = ok && keepsName && usesRules;
+
+  // Third check: quantity + singular noun.
+  await page.$eval("#src", el => { el.value = "Many apple. Every days we get two order."; el.dispatchEvent(new Event("input")); });
+  await new Promise(r => setTimeout(r, 2000));
+  const fixed3 = await page.$eval("#fixed", e => e.textContent);
+  console.log("\n== Quantity check ==\n" + fixed3);
+  ok = ok && /Many apples/.test(fixed3) && /Every day /.test(fixed3) && /two orders/.test(fixed3);
 } catch (e) {
   console.error("Smoke test error:", e);
 } finally {
