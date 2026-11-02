@@ -14,7 +14,7 @@
 <div class="wrap">
   <header>
     <h1>English Grammar <span>校稿台</span></h1>
-    <p>貼上英文，系統會自動標出拼字、文法和用字問題，點建議就能直接修正。<strong>完全免費、不用登入，文字只在你的電腦裡處理，不會上傳到任何地方。</strong></p>
+    <p>貼上英文自動檢查，點建議直接修正。<strong>免費、免登入，文字不會上傳。</strong></p>
   </header>
 
   <div class="grid">
@@ -34,44 +34,40 @@
             <option value="Indian">印度</option>
           </select>
         </label>
-        <label class="check"><input type="checkbox" id="errorsOnly"> 只看錯誤（隱藏風格建議）</label>
+        <label class="check"><input type="checkbox" id="errorsOnly"> 只看錯誤</label>
         <span class="count" id="count"></span>
       </div>
       <div class="row">
         <button class="ghost" id="exampleBtn" type="button">載入範例</button>
         <button class="ghost" id="clearBtn" type="button">清空</button>
+        <button class="ghost" id="copyPrompt" type="button" title="把文字連同改寫指令一起複製，貼到 ChatGPT 或 Claude">複製 AI 改寫提示詞</button>
         <button class="ghost" id="resetIgnoreBtn" type="button" hidden>恢復已忽略的提示</button>
       </div>
     </section>
 
     <section class="panel" aria-labelledby="out-label">
       <div class="label"><span id="out-label">校稿結果</span><span class="hint">點標記看說明</span></div>
-      <div class="proof" id="proof" aria-live="polite"></div>
-
-      <div class="ver">
-        <h3>套用建議後的版本 <small>每個問題都採用第一個建議</small></h3>
-        <div class="txt" id="fixed"></div>
-        <div class="row">
-          <button class="ghost" type="button" id="copyFixed">複製</button>
-          <button class="ghost" type="button" id="useFixed">取代原文</button>
+      <div class="scroll">
+        <div class="proof" id="proof" aria-live="polite"></div>
+        <div class="ver">
+          <h3>套用建議後的版本 <small>每個問題採用第一個建議</small></h3>
+          <div class="txt" id="fixed"></div>
+          <div class="row">
+            <button class="ghost" type="button" id="copyFixed">複製</button>
+            <button class="ghost" type="button" id="useFixed">取代原文</button>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="panel explain" aria-labelledby="ex-label">
       <div class="label"><span id="ex-label">文法解釋</span><span class="tally" id="tally"></span></div>
-      <ol class="issues" id="issues"></ol>
+      <ol class="issues scroll" id="issues"></ol>
     </section>
   </div>
 
-  <section class="note">
-    <h2>需要整段改寫得更自然？</h2>
-    <p>這個工具擅長抓拼字、文法和常見用法錯誤，但不會幫你重寫句子或調整語氣。重要的信件可以按下面的按鈕，把文字連同指令一起複製，再貼到 ChatGPT 或 Claude。</p>
-    <button class="ghost" type="button" id="copyPrompt">複製「AI 改寫」提示詞</button>
-  </section>
-
   <footer>
-    檢查引擎：<a href="https://writewithharper.com" target="_blank" rel="noopener">Harper</a>（開源，Apache-2.0 授權）。所有檢查都在瀏覽器內完成。
+    檢查引擎：<a href="https://writewithharper.com" target="_blank" rel="noopener">Harper</a>（開源，Apache-2.0）＋校稿台補充規則。需要整段改寫時，按「複製 AI 改寫提示詞」貼到 ChatGPT 或 Claude。
   </footer>
 </div>
 <script type="module" src="app.js"></script>
